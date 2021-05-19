@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedParameters": false,
+        "noImplicitReturns": true,
+        "esModuleInterop": true,
+        "noUnusedLocals": false,
+        "noImplicitAny": true,
+        "declarationDir": "dist/types",
+        "declaration": true,
+        "target": "es2015",
+        "module": "es6",
+        "strict": true,
+        "moduleResolution": "node"
+    },
+    "include": [
+        "src/**/*"
+, "main.ts", "main.ts"    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

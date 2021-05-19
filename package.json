@@ -1,0 +1,41 @@
+{
+    "name": "ar-piano",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "serve": "webpack serve --mode=development",
+        "type-check": "tsc --noEmit",
+        "type-check:watch": "npm run type-check -- --watch",
+        "build:types": "tsc --emitDeclarationOnly",
+        "build:js": "webpack --mode=production",
+        "build": "npm run build:types && npm run build:js"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/core": "7.14.0",
+        "@babel/plugin-proposal-class-properties": "7.13.0",
+        "@babel/plugin-proposal-object-rest-spread": "7.13.8",
+        "@babel/preset-env": "7.14.0",
+        "@babel/preset-typescript": "7.13.0",
+        "@types/three": "^0.127.1",
+        "babel-loader": "8.2.2",
+        "copy-webpack-plugin": "^8.1.1",
+        "file-loader": "^6.2.0",
+        "fork-ts-checker-webpack-plugin": "6.2.5",
+        "html-loader": "^2.1.2",
+        "html-webpack-plugin": "^5.3.1",
+        "script-loader": "^0.7.2",
+        "typescript": "4.2.4",
+        "url-loader": "^4.1.1",
+        "webpack": "5.36.2",
+        "webpack-cli": "4.6.0",
+        "webpack-dev-server": "^3.11.2"
+    },
+    "dependencies": {
+        "@ar-js-org/ar.js": "https://github.com/AR-js-org/AR.js.git#4128f2d",
+        "@mediapipe/drawing_utils": "^0.2.1617146986",
+        "@mediapipe/hands": "^0.1.1617147326",
+        "regenerator-runtime": "^0.13.7",
+        "three": "^0.128.0"
+    }
+}
