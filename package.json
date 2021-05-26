@@ -32,7 +32,7 @@
         "webpack-dev-server": "^3.11.2"
     },
     "dependencies": {
-        "@ar-js-org/ar.js": "https://github.com/AR-js-org/AR.js.git#4128f2d",
+        "@ar-js-org/ar.js": "https://github.com/AR-js-org/AR.js.git#90e83dc",
         "@mediapipe/drawing_utils": "^0.2.1617146986",
         "@mediapipe/hands": "^0.1.1617147326",
         "regenerator-runtime": "^0.13.7",

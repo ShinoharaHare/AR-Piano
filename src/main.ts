@@ -1,84 +1,110 @@
 import * as THREE from 'three'
-import { Core } from './core'
-import { estimateDepth, Hand, run } from './hand'
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls'
 import { _window } from './utils'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { Box3, Color, Mesh, Object3D, Sphere } from 'three'
-import { noteOff, noteOn } from './piano'
+import { Hands } from '@mediapipe/hands'
+import { Core, Hand, HandControl, Keyboard, KeyboardControl } from './engine'
 
-
-function detectCollision(obj1: Mesh, obj2: Mesh){
-    // obj1.geometry.computeBoundingSphere()
-    // obj2.geometry.computeBoundingBox()
-    let a = new Box3().setFromObject(obj1)
-    let b = new Box3().setFromObject(obj2)
-    return a.intersectsBox(b)
-  }
 
 async function main() {
     const core = new Core()
     core.init({
         container: document.getElementById('container')!
     })
-    core.run()
+    const hands = initAndAttachMpHands(core)
 
-    core.scene.add(new THREE.AmbientLight(0x666666))
+    core.mainScene.add(new THREE.AmbientLight(0x666666))
     let pl = new THREE.PointLight('white')
     pl.position.y = 10
-    core.scene.add(pl)
+    core.mainScene.add(pl)
 
     let hand = new Hand()
     hand.visible = false
-    core.scene.add(hand)
+    let handControl = new HandControl(core, hand)
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const material = new THREE.MeshPhongMaterial({ color: 0xffffff })
-    geometry.computeBoundingSphere()
-    const box = new THREE.Mesh(geometry, material)
-    box.position.z = -7.5
-    box.position.y = -1
-    box.rotateY(45)
-    core.scene.add(box)
+    hands.onResults(results => {
+        if (results.multiHandLandmarks) {
+            hand.visible = true
+            handControl.updateLandmarks(results.multiHandLandmarks[0])
+        } else {
+            hand.visible = false
+        }
+    })
 
-    const loader = new GLTFLoader()
-    const gltf = await loader.loadAsync('assets/Keyboard.gltf')
-    const model = gltf.scene
-    model.scale.x = .125
-    model.scale.y = .125
-    model.scale.z = .125
+    core.mainScene.add(hand)
 
-    // core.scene.add(model)
+    // const geometry = new THREE.BoxGeometry(1, 1, 1)
+    // const material = new THREE.MeshPhongMaterial({ color: 0xffffff })
+    // const box = new THREE.Mesh(geometry, material)
+    // box.position.z = -7.5
+    // box.position.y = -1
+    // box.rotateY(45)
+    // core.mainScene.add(box)
 
-    let collided = false
+    const keyboard = new Keyboard()
+    keyboard.position.y = -2
+    keyboard.position.z = -25
+    keyboard.rotateX(1)
 
-    _window.run = () => {
-        run({
-            video: core.video,
-            callback(results) {
-                // const ctx = canvas.getContext('2d')!
-                // ctx.clearRect(0, 0, canvas.width, canvas.height)
-                hand.visible = results.multiHandLandmarks != null
-                if (results.multiHandLandmarks) {
-                    const landmarks = results.multiHandLandmarks[0]
-                    // drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 })
-                    // drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2 })
-                    // estimateDepth(landmarks)
-                    hand.update(core.camera, results.multiHandLandmarks[0])
+    const tc = new TransformControls(core.arCamera, document.body)
+    tc.attach(keyboard)
 
-                    if (detectCollision(hand.landmarks[7], box) && !collided) {
-                        collided = true
-                        box.material.color = new Color('yellow')
-                        noteOn(0, 60, 127)
-                    } else if (!detectCollision(hand.landmarks[7], box) && collided) {
-                        collided = false
-                        box.material.color = new Color('white')
-                        noteOff(0, 60)
-                    }
-                }
-            }
-        })
+    const keyboardControl = new KeyboardControl(core, keyboard)
+
+    // [4, 8, 16, 20]
+    for (let i of [8]) {
+        keyboardControl.addCollider(hand.landmarks[i])
     }
+
+    core.mainScene.add(keyboard)
+    core.mainScene.add(tc)
+
+    // core.addMarker('pattern-marker.patt', new THREE.Mesh(geometry, material))
+
+    core.run()
+    // core.flipX()
+
+    // let collided = false
+    // core.addEventListener('render', () => {
+    //     let detect = detectCollision(hand.landmarks[7], box)
+    //     if (detect && !collided) {
+    //         collided = true
+    //         box.material.color = new Color('yellow')
+    //         MIDIPlayer.noteOn(0, 60, 127)
+    //     } else if (!detect && collided) {
+    //         collided = false
+    //         box.material.color = new Color('white')
+    //         MIDIPlayer.noteOff(0, 60)
+    //     }
+    // })
+
     _window.core = core
 }
+
+function initAndAttachMpHands(core: Core) {
+    const hands = new Hands({ locateFile: file => `mediapipe/${file}` })
+
+    hands.setOptions({
+        maxNumHands: 1,
+        minTrackingConfidence: 0.9
+    })
+
+    let done = false
+    core.addEventListener('render', async () => {
+        if (done) {
+            done = false
+            await hands.send({ image: core.video })
+            done = true
+        }
+    })
+
+    _window.run = () => done = true
+    return hands
+}
+
+// function detectCollision(obj1: Mesh, obj2: Mesh) {
+//     let a = new Box3().setFromObject(obj1)
+//     let b = new Box3().setFromObject(obj2)
+//     return a.intersectsBox(b)
+// }
 
 main()
