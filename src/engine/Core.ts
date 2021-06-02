@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import * as THREEx from 'ar-threex'
-import Control from './Control'
+import BaseObject from './BaseObject'
 
 export interface InitParams {
     container: HTMLElement
@@ -16,7 +16,8 @@ class Core extends THREE.EventDispatcher {
     private _arSource: any = null
     private _arContext: any = null
     private _aspect!: number
-    private _controls: Control[] = []
+    private _objects: BaseObject[] = []
+    private _running: boolean = false
 
     get video(): HTMLVideoElement { return this._arSource.domElement }
     get width() { return this._renderer.domElement.width }
@@ -24,8 +25,9 @@ class Core extends THREE.EventDispatcher {
     get aspect() { return this._aspect }
     get arCamera() { return this._arCamera }
     get mainScene() { return this._mainScene }
-    get canvas() { return this._renderer.domElement }
+    get domElement() { return this._renderer.domElement }
     get container() { return this._container }
+    get running() { return this._running }
 
     constructor() {
         super()
@@ -33,7 +35,11 @@ class Core extends THREE.EventDispatcher {
             alpha: true,
             antialias: true
         })
+        this._renderer.setPixelRatio(window.devicePixelRatio)
         this._renderer.autoClear = false
+        this._renderer.toneMapping = THREE.ACESFilmicToneMapping
+        this._renderer.toneMappingExposure = 1
+        this._renderer.outputEncoding = THREE.sRGBEncoding
 
         this._mainScene = new THREE.Scene()
         this._arCamera = new THREE.PerspectiveCamera()
@@ -41,8 +47,9 @@ class Core extends THREE.EventDispatcher {
     }
 
     init(params: InitParams) {
-        // document.body.appendChild(this.renderer.domElement)
-        addEventListener('resize', () => this.onResize())
+        window.addEventListener('resize', () => {
+            this.resize(window.innerWidth, window.innerHeight)
+        })
         this._container = params.container
         this._container.style.position = 'relative'
         this._container.style.margin = '0 auto'
@@ -56,7 +63,7 @@ class Core extends THREE.EventDispatcher {
             this._container.appendChild(this.video)
             this.video.addEventListener('loadedmetadata', () => {
                 this._aspect = this.video.videoWidth / this.video.videoHeight
-                this.onResize()
+                this.resize(window.innerWidth, window.innerHeight)
             })
         })
 
@@ -71,23 +78,22 @@ class Core extends THREE.EventDispatcher {
     }
 
     run() {
-        let stop = false
-        const stopListener = () => {
-            stop = true
-            this.removeEventListener('stop', stopListener)
+        if (!this._running) {
+            this._objects.forEach(x => x.setup())
+            this._renderer.setAnimationLoop(() => this.render())
         }
-        this.addEventListener('stop', stopListener)
-        const func = () => {
-            if (!stop) {
-                this.render()
-                requestAnimationFrame(func)
-            }
-        }
-        requestAnimationFrame(func)
     }
 
     stop() {
+        this._renderer.setAnimationLoop(null)
         this.dispatchEvent({ type: 'stop' })
+    }
+
+    add(obj: BaseObject | THREE.Object3D) {
+        if (obj instanceof BaseObject) {
+            this._objects.push(obj)
+        }
+        this._mainScene.add(obj)
     }
 
     addMarker(markerPath: string, object: THREE.Object3D) {
@@ -106,16 +112,11 @@ class Core extends THREE.EventDispatcher {
         this._container.style.transform = 'scaleX(1)'
     }
 
-    private onResize() {
-        let width = 0
-        let height = 0
-
+    public resize(width: number, height: number) {
         if (this._aspect > 1) {
-            width = innerHeight * this._aspect
-            height = innerHeight
+            width = height * this._aspect
         } else {
-            width = innerWidth
-            height = innerWidth / this._aspect
+            height = width / this._aspect
         }
 
         this._container.style.width = `${width}px`
@@ -137,9 +138,8 @@ class Core extends THREE.EventDispatcher {
             this._arContext.update(this._arSource.domElement)
         }
 
+        this._objects.forEach(x => x.update(this.arCamera))
         this.dispatchEvent({ type: 'render' })
-
-        this._controls.forEach(x => x.update())
 
         this._renderer.clear()
         this._renderer.render(this._mainScene, this._arCamera)

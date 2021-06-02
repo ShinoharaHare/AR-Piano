@@ -1,50 +1,36 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import BaseObject from '../BaseObject'
 
-const loader = new GLTFLoader()
-const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
-class Keyboard extends THREE.Object3D {
-    keys: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial>[] = []
+class Keyboard extends BaseObject {
+    keys: THREE.Object3D[]
 
-    constructor() {
+    public constructor() {
         super()
-        this.load()
+
+        this.keys = []
+        this.loadModel()
     }
 
-    async load() {
-        // const gltf = await loader.loadAsync('assets/Keyboard.glb')
-        // const model = gltf.scene
-        // this.add(model)
-        const group = new THREE.Group()
+    private async loadModel() {
+        const loader = new GLTFLoader()
+        const gltf = await loader.loadAsync('assets/keyboard.glb')
+        gltf.scene.scale.multiplyScalar(0.005)
+        gltf.scene.rotateY(1.57)
+        gltf.scene.rotateZ(0.5)
+        this.add(gltf.scene)
 
-        const geometry = new THREE.BoxGeometry(2, 1.25, 6)
+        this.getKeys()
 
-        let x = 0
-        for (let octave = 3; octave <= 3; octave++) {
-            for (let note of notes) {
-                const sharp = note.includes('#')
-                const color = sharp ? 'black' : 'white'
-                const material = new THREE.MeshPhongMaterial({
-                    color,
-                    transparent: true,
-                    opacity: 0.7
-                })
+        this.dispatchEvent({ type: 'loaded' })
+    }
 
-                const key = new THREE.Mesh(geometry, material)
-
-                key.name = note + octave
-                key.position.x = x
-                key.material.color
-
-                x += 2 + 0.1
-                group.add(key)
-                this.keys.push(key)
-            }
+    private getKeys() {
+        for (let i = 0; i <= 24; i++) {
+            const key = this.getObjectByName(`Key${i}`)!
+            this.keys.push(key)
         }
-
-        group.translateX(-x / 2)
-        this.add(group)
     }
 }
 
