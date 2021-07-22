@@ -128,7 +128,7 @@ class Core extends THREE.EventDispatcher {
         this.video.style.height = ''
         this.video.width = width
         this.video.height = height
-        this._renderer.setSize(width, height)
+        this._renderer.setSize(width/2, height/2)
         this._renderer.domElement.style.cssText = this.video.style.cssText
         this._renderer.domElement.style.zIndex = '-1'
     }

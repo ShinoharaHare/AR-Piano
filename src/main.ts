@@ -3,9 +3,25 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { _window } from './utils'
 import { Hands } from '@mediapipe/hands'
 import { Core, Hand, HandBehavior, Keyboard, KeyboardBehavior } from './engine'
+import { Depth } from './engine/hand/Depth'
+import { filter } from 'rxjs/operators'
+
 
 
 async function main() {
+    // Depth.ts
+    const depth = new Depth();
+    _window.depth = depth;
+    // depth.depthOb.subscribe(console.log);
+    _window.max = -69;  _window.min =  69;
+    depth.depthOb.pipe(
+        filter(v => !isNaN(v))
+    ).subscribe(d => {  
+        _window.max = Math.max(_window.max, d);
+        _window.min = Math.min(_window.min, d);
+    });
+
+    // =======================================================
     const core = new Core()
     core.init({
         container: document.getElementById('container')!
@@ -25,6 +41,9 @@ async function main() {
         let landmarks = results.multiHandLandmarks?.[0]
         handBehavior.setLandmarks(landmarks || null)
         if (landmarks) {
+            // ==============================
+            depth.updateLandmarks(landmarks);
+            // ==============================
             let pts = []
             // [4, 8, 12, 16, 20]
             for (let i of [8]) {
@@ -56,9 +75,10 @@ async function main() {
 
     // core.addMarker('pattern-marker.patt', new THREE.Mesh(geometry, material))
 
-    // core.flipX()
+    core.flipX()
     core.run()
     _window.core = core
+    _window.hand = hands
 }
 
 function initAndAttachMpHands(core: Core) {

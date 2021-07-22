@@ -36,6 +36,7 @@
         "@mediapipe/drawing_utils": "^0.2.1617146986",
         "@mediapipe/hands": "^0.1.1617147326",
         "regenerator-runtime": "^0.13.7",
+        "rxjs": "^7.2.0",
         "three": "^0.128.0"
     }
 }
