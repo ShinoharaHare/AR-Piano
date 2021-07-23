@@ -9,6 +9,13 @@ import { filter } from 'rxjs/operators'
 
 
 async function main() {
+    var geometry = new THREE.CircleGeometry(0.02, 32);
+    const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+    const circle = new THREE.Mesh( geometry, material );
+    // circle.position.y = 1;
+    circle.position.z = -2;
+
+
     // Depth.ts
     const depth = new Depth();
     _window.depth = depth;
@@ -16,10 +23,16 @@ async function main() {
     _window.max = -69;  _window.min =  69;
     depth.depthOb.pipe(
         filter(v => !isNaN(v))
-    ).subscribe(d => {  
+    ).subscribe(d => { 
+        if(d > 0.15){
+            circle.material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+        }else{
+            circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
+        }
         _window.max = Math.max(_window.max, d);
         _window.min = Math.min(_window.min, d);
     });
+
 
     // =======================================================
     const core = new Core()
@@ -47,11 +60,13 @@ async function main() {
             let pts = []
             // [4, 8, 12, 16, 20]
             for (let i of [8]) {
-                let x = landmarks[i].x
-                let y = landmarks[i].y
-                x = x * 2 - 1
-                y = -(y * 2 - 1)
-                pts.push(new THREE.Vector2(x, y))
+                if(depth.depth > 0.15){  // add depth of finger check
+                    let x = landmarks[i].x
+                    let y = landmarks[i].y
+                    x = x * 2 - 1
+                    y = -(y * 2 - 1)
+                    pts.push(new THREE.Vector2(x, y))
+                }
             }
             keyboardBehavior.setViewportPoints(pts)
         }
@@ -72,6 +87,10 @@ async function main() {
 
     core.add(keyboard)
     core.add(tc)
+
+    // =======================
+    core.add(circle);
+    // =======================
 
     // core.addMarker('pattern-marker.patt', new THREE.Mesh(geometry, material))
 
