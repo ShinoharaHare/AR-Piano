@@ -1,75 +1,81 @@
-import { NormalizedLandmarkList } from '@mediapipe/hands';
+import { NormalizedLandmarkList, NormalizedLandmarkListList } from '@mediapipe/hands';
 import { BehaviorSubject, Observable } from 'rxjs';
 import * as THREE from 'three';
 
 export class Depth {
-    private _stdLandmarks: NormalizedLandmarkList = [];
-    private _prjLandmarks: NormalizedLandmarkList = [];
-    private _stdFL: number[] = [];
-    private _depth: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+    private _stdLandmarks: NormalizedLandmarkListList = [];
+    private _prjLandmarks: NormalizedLandmarkListList = [];
+    private _stdFL: number[][] = [];
+    private _depth: BehaviorSubject<number[]> = new BehaviorSubject<number[]>([0,0,0,0,0]);
+    public readonly threshold: number[] = [0.09, 0.13, 0.15, 0.14, 0.10];
     private _needUpdateStdFL = false;
     
     /**
-     * 取得depth 的 Observable物件，訂閱此Observable以獲得深度
+     * 取得depth陣列 的 Observable物件，訂閱此Observable以獲得深度陣列
      */
-    get depthOb(): Observable<number>{
+    get depthOb(): Observable<number[]>{
         return this._depth.asObservable();
     }
 
     /**
-     * 取得目前的手指深度(目前是食指)
+     * 取得目前的手指深度陣列，用 index來指定哪隻手指
      */
-    get depth(): number {
+    get depth(): number[] {
         return this._depth.getValue();
     }
 
     /**
      * 更新目前得手指位置，並非同步計算手指深度
-     * @param landmarks 
+     * @param landmarks 整隻手的位置
      */
     public updateLandmarks(landmarks: NormalizedLandmarkList): void{
         if(this._needUpdateStdFL) {
             this.logStd(landmarks);
         }
         // update
-        this._prjLandmarks = this.firstFingerOf(landmarks);
+        this._prjLandmarks = this.getNthFinger(landmarks) as NormalizedLandmarkListList;
         // compute
         this.computeDepth();
     }
 
     /**
-     * 輸入目前的手指位置，得到估計的手指深度(食指)，同時非同步發布深度
-     * @param landmarks 手指位置，若為空則預設為先前保存的值
-     * @returns 手指深度(目前是食指)
+     * [async]
+     * 輸入目前的手指位置，得到估計的手指深度陣列，同時非同步發布深度陣列
+     * @param landmarks 手指位置，若為空則預設為先前保存的值 [deprecated]
+     * @returns 手指深度陣列
      */
-    public async computeDepth(landmarks: NormalizedLandmarkList = []): Promise<number> {
+    public async computeDepth(): Promise<number[]> {
         if(this._stdLandmarks.length < 1) {
-            return 0;
+            return [0,0,0,0,0];
         }
-        if(landmarks.length < 1) {
-            if(this._prjLandmarks.length < 1){ return 0; }
-            landmarks = this._prjLandmarks;
-        }else {
-            landmarks = this.firstFingerOf(landmarks);
-        }
+        // if(landmarks.length < 1) {
+        //     if(this._prjLandmarks.length < 1){ return 0; }
+        //     landmarks = this._prjLandmarks;
+        // }else {
+        //     landmarks = this.getNthFinger(landmarks as NormalizedLandmarkList)
+        // }
 
         // compute  /////////////////////
-        let FL: number[] = this.lengthsBetweenLandmarks(landmarks);
-        // console.log("FL: ", FL);
+        let depth: number[] = [];
+        for(let fingerIdx = 0; fingerIdx < 5; fingerIdx++){
+            let FL: number[] = [];
+            FL = this.lengthsBetweenLandmarks(this._prjLandmarks[fingerIdx]);
+            // console.log("FL: ", FL);
 
-        let rads = [];
-        for(let idx in this._stdFL){
-            rads.push(Math.acos(FL[idx] / this._stdFL[idx]));
-        }
-        // console.log('rads: ', rads);
-
-        // reduce
-        const depth = rads.reduce((depthAcc, rad, idx) => {
-            if(idx !== 0){
-                return this._stdFL[idx] * Math.sin(rad) + depthAcc;
+            let rads = [];
+            for(let idx in this._stdFL[fingerIdx]){
+                rads.push(Math.acos(FL[idx] / this._stdFL[fingerIdx][idx]));
             }
-            return 0;
-        }, 0);
+            // console.log('rads: ', rads);
+
+            // reduce
+            depth[fingerIdx] = rads.reduce((depthAcc, rad, idx) => {
+                if(idx !== 0){
+                    return this._stdFL[fingerIdx][idx] * Math.sin(rad) + depthAcc;
+                }
+                return 0;
+            }, 0);
+        }
 
         // update depth by subject.next()
         this._depth.next(depth);
@@ -87,8 +93,12 @@ export class Depth {
             return ;
         }
         this._needUpdateStdFL = false;
-        this._stdLandmarks = this.firstFingerOf(landmarks);
-        this._stdFL = this.lengthsBetweenLandmarks(this._stdLandmarks);
+        this._stdLandmarks = this.getNthFinger(landmarks) as NormalizedLandmarkListList;
+        let tmpStdFL: number[][] = [];
+        for(let i = 0; i < 5; i++){
+            tmpStdFL.push(this.lengthsBetweenLandmarks(this._stdLandmarks[i]));
+        }
+        this._stdFL = tmpStdFL;
         // _stdFL
         console.log('%c standard logged!!', "color: blue");
     }
@@ -112,6 +122,35 @@ export class Depth {
     }
 
     /**
+     * 獲得第n隻手指，或是獲得整隻手掌(5隻手指裝在陣列)
+     * @param landmarks 整隻手的關節點
+     * @param n 第ｎ隻手指。預設為-1，代表回傳整隻手
+     * @returns 回傳第n隻手指，若n為預設值-1時，回傳所有手指手
+     */
+    public getNthFinger(landmarks: NormalizedLandmarkList, 
+                        n: number = -1): NormalizedLandmarkList | NormalizedLandmarkListList{
+        let nthFinger: NormalizedLandmarkListList = [[], [], [], [], []];
+        landmarks.map((lm, idx) => {
+            if([0, 1, 2, 3, 4].indexOf(idx) !== -1) {
+                nthFinger[0].push(lm);
+            }
+            if([0, 5, 6, 7, 8].indexOf(idx) !== -1) {
+                nthFinger[1].push(lm);
+            }
+            if([0, 9,10,11,12].indexOf(idx) !== -1) {
+                nthFinger[2].push(lm);
+            }
+            if([0,13,14,15,16].indexOf(idx) !== -1) {
+                nthFinger[3].push(lm);
+            }
+            if([0,17,18,19,20].indexOf(idx) !== -1) {
+                nthFinger[4].push(lm);
+            }
+        });
+        return n == -1? nthFinger : nthFinger[n];
+    }
+
+    /**
      * 擷取出食指的landmarks(編號0 5 6 7 8)
      * @param landmarks 整隻手的landmarks
      * @returns 食指的landmarks
@@ -128,3 +167,13 @@ export class Depth {
 
     constructor() { }
 }
+
+// TODO: 需要針對不同手指設計按下的門檻值
+//     V 規劃 readonly threshold: number[] = [0.09, 0.13, 0.15, 0.14, 0.10]
+//       規劃 isNthFingerDown(): bool ?
+//       這方法滿糟的，有時候門檻值適合，有時很差(觸發不了或是誤觸)
+//       應該改用 depth max值的 90% (舉例)，作為門檻值
+//       並需要時常更新門檻值
+//       設計門檻值更新邏輯
+
+

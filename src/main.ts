@@ -20,17 +20,19 @@ async function main() {
     const depth = new Depth();
     _window.depth = depth;
     // depth.depthOb.subscribe(console.log);
-    _window.max = -69;  _window.min =  69;
+    // _window.max = -69;  _window.min =  69;
     depth.depthOb.pipe(
-        filter(v => !isNaN(v))
+        // filter(v => !isNaN(v))
     ).subscribe(d => { 
-        if(d > 0.15){
+        const target: number = 1;
+        console.log(d);
+        if(d[target] > 0.15){   
             circle.material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
         }else{
             circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
         }
-        _window.max = Math.max(_window.max, d);
-        _window.min = Math.min(_window.min, d);
+        // _window.max = Math.max(_window.max, d);
+        // _window.min = Math.min(_window.min, d);
     });
 
 
@@ -59,8 +61,8 @@ async function main() {
             // ==============================
             let pts = []
             // [4, 8, 12, 16, 20]
-            for (let i of [8]) {
-                if(depth.depth > 0.15){  // add depth of finger check
+            for (let [idx, i] of [4, 8, 12, 16, 20].entries()) {
+                if(depth.depth[idx] > depth.threshold[idx]){  // add depth of finger check
                     let x = landmarks[i].x
                     let y = landmarks[i].y
                     x = x * 2 - 1
