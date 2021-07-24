@@ -7,8 +7,9 @@ export class Depth {
     private _prjLandmarks: NormalizedLandmarkListList = [];
     private _stdFL: number[][] = [];
     private _depth: BehaviorSubject<number[]> = new BehaviorSubject<number[]>([0,0,0,0,0]);
-    public readonly threshold: number[] = [0.09, 0.13, 0.15, 0.14, 0.10];
+    // public readonly threshold: number[] = [0.09, 0.13, 0.15, 0.14, 0.10];  // [deprecated]
     private _needUpdateStdFL = false;
+    public maxDepth: number[] = [0.08, 0.12, 0.14, 0.13, 0.09];
     
     /**
      * 取得depth陣列 的 Observable物件，訂閱此Observable以獲得深度陣列
@@ -23,6 +24,15 @@ export class Depth {
     get depth(): number[] {
         return this._depth.getValue();
     }
+
+    /**
+     * 獲得經計算的門檻值
+     */
+    get threshold(): number[] {
+        const ratio: number = 0.9;
+        return this.maxDepth.map(v => v * ratio);
+    }
+
 
     /**
      * 更新目前得手指位置，並非同步計算手指深度
@@ -48,12 +58,6 @@ export class Depth {
         if(this._stdLandmarks.length < 1) {
             return [0,0,0,0,0];
         }
-        // if(landmarks.length < 1) {
-        //     if(this._prjLandmarks.length < 1){ return 0; }
-        //     landmarks = this._prjLandmarks;
-        // }else {
-        //     landmarks = this.getNthFinger(landmarks as NormalizedLandmarkList)
-        // }
 
         // compute  /////////////////////
         let depth: number[] = [];
@@ -76,6 +80,9 @@ export class Depth {
                 return 0;
             }, 0);
         }
+
+        // update maxDepth
+        this.updateMaxDepth(depth);
 
         // update depth by subject.next()
         this._depth.next(depth);
@@ -101,6 +108,10 @@ export class Depth {
         this._stdFL = tmpStdFL;
         // _stdFL
         console.log('%c standard logged!!', "color: blue");
+    }
+
+    private updateMaxDepth(depth: number[]): void {
+        this.maxDepth = depth.map((d, i) =>  isNaN(d)? this.maxDepth[i]: Math.max(this.maxDepth[i], d));
     }
 
     /**

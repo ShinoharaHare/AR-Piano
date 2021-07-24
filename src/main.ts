@@ -26,7 +26,7 @@ async function main() {
     ).subscribe(d => { 
         const target: number = 1;
         console.log(d);
-        if(d[target] > 0.15){   
+        if(d[target] > depth.threshold[target]){   
             circle.material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
         }else{
             circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
