@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import * as THREEx from 'ar-threex'
 import BaseObject from './BaseObject'
 
+
 export interface InitParams {
     container: HTMLElement
 }
@@ -18,6 +19,7 @@ class Core extends THREE.EventDispatcher {
     private _aspect!: number
     private _objects: BaseObject[] = []
     private _running: boolean = false
+    private _clock: THREE.Clock = new THREE.Clock()
 
     get video(): HTMLVideoElement { return this._arSource.domElement }
     get width() { return this._renderer.domElement.width }
@@ -29,7 +31,7 @@ class Core extends THREE.EventDispatcher {
     get container() { return this._container }
     get running() { return this._running }
 
-    constructor() {
+    public constructor() {
         super()
         this._renderer = new THREE.WebGLRenderer({
             alpha: true,
@@ -37,26 +39,20 @@ class Core extends THREE.EventDispatcher {
         })
         this._renderer.setPixelRatio(window.devicePixelRatio)
         this._renderer.autoClear = false
-        this._renderer.toneMapping = THREE.ACESFilmicToneMapping
-        this._renderer.toneMappingExposure = 1
-        this._renderer.outputEncoding = THREE.sRGBEncoding
 
         this._mainScene = new THREE.Scene()
         this._arCamera = new THREE.PerspectiveCamera()
         this._mainScene.add(this._arCamera)
     }
 
-    init(params: InitParams) {
-        window.addEventListener('resize', () => {
-            this.resize(window.innerWidth, window.innerHeight)
-        })
+    public init(params: InitParams) {
+        window.addEventListener('resize', () => this.resize(window.innerWidth, window.innerHeight))
         this._container = params.container
-        this._container.style.position = 'relative'
-        this._container.style.margin = '0 auto'
         this._container.appendChild(this._renderer.domElement)
 
         this._arProfile = new THREEx.ArToolkitProfile()
-        this._arSource = new THREEx.ArToolkitSource(this._arProfile)
+        this._arProfile.contextParameters.cameraParametersUrl = 'camera_para.dat'
+        this._arSource = new THREEx.ArToolkitSource(this._arProfile.sourceParameters)
         this._arContext = new THREEx.ArToolkitContext(this._arProfile.contextParameters)
 
         this._arSource.init(() => {
@@ -77,69 +73,86 @@ class Core extends THREE.EventDispatcher {
         })
     }
 
-    run() {
+    public run() {
         if (!this._running) {
             this._objects.forEach(x => x.setup())
-            this._renderer.setAnimationLoop(() => this.render())
+            this._renderer.setAnimationLoop(() => this._render())
         }
     }
 
-    stop() {
+    public stop() {
         this._renderer.setAnimationLoop(null)
         this.dispatchEvent({ type: 'stop' })
     }
 
-    add(obj: BaseObject | THREE.Object3D) {
+    public add(obj: BaseObject | THREE.Object3D) {
         if (obj instanceof BaseObject) {
             this._objects.push(obj)
         }
         this._mainScene.add(obj)
     }
 
-    addMarker(markerPath: string, object: THREE.Object3D) {
-        new THREEx.ArMarkerControls(this._arContext, object, {
+    public addMarker(markerPath: string, object: THREE.Object3D) {
+        let controls = new THREEx.ArMarkerControls(this._arContext, object, {
             type: 'pattern',
             patternUrl: markerPath
         })
         this._mainScene.add(object)
+        return controls
     }
 
-    flipX() {
+    public flipX() {
         this._container.style.transform = 'scaleX(-1)'
     }
 
-    unflipX() {
+    public unflipX() {
         this._container.style.transform = 'scaleX(1)'
     }
 
-    public resize(width: number, height: number) {
-        if (this._aspect > 1) {
-            width = height * this._aspect
+    public resize(width: number, height: number, fullscreen: boolean = true) {
+        if (fullscreen) {
+            this._container.style.position = 'fixed'
+
+            this._arCamera.aspect = this._aspect
+            this._arCamera.updateProjectionMatrix()
+
+            this._arSource.onResize()
+            this._arSource.copySizeTo(this._renderer.domElement)
+            this._arSource.copySizeTo(this._arContext.arController.canvas)
+
+            width = parseInt(this._renderer.domElement.style.width)
+            height = parseInt(this._renderer.domElement.style.height)
+            this._renderer.setSize(width, height)
         } else {
-            height = width / this._aspect
+            if (this._aspect > 1) {
+                width = height * this._aspect
+            } else {
+                height = width / this._aspect
+            }
+
+            this._container.style.position = 'relative'
+            this._container.style.margin = '0 auto'
+            this._container.style.width = `${width}px`
+            this._container.style.height = `${height}px`
+
+            this.video.style.width = ''
+            this.video.style.height = ''
+            this.video.width = width
+            this.video.height = height
+
+            this._renderer.setSize(width, height)
+            this._renderer.domElement.style.cssText = this.video.style.cssText
+            this._renderer.domElement.style.zIndex = '-1'
         }
-
-        this._container.style.width = `${width}px`
-        this._container.style.height = `${height}px`
-        this._arCamera.aspect = this._aspect
-        this._arCamera.updateProjectionMatrix()
-
-        this.video.style.width = ''
-        this.video.style.height = ''
-        this.video.width = width
-        this.video.height = height
-        this._renderer.setSize(width, height)
-        this._renderer.domElement.style.cssText = this.video.style.cssText
-        this._renderer.domElement.style.zIndex = '-1'
     }
 
-    private render() {
+    private _render() {
         if (this._arSource.ready) {
             this._arContext.update(this._arSource.domElement)
         }
 
         this._objects.forEach(x => x.update(this.arCamera))
-        this.dispatchEvent({ type: 'render' })
+        this.dispatchEvent({ type: 'render', delta: this._clock.getDelta() })
 
         this._renderer.clear()
         this._renderer.render(this._mainScene, this._arCamera)

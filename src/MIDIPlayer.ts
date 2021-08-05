@@ -6,19 +6,20 @@ const MIDI: any = global.MIDI
 
 type NoteLike = number | string
 
-class _MIDIPlayer {
-    private static _instance = new _MIDIPlayer()
-    static get instance() { return _MIDIPlayer._instance }
+class MIDIPlayer {
+    private static _instance = new MIDIPlayer()
+    static get instance() { return MIDIPlayer._instance }
 
     private _ready = false
     private get ready() { return this._ready }
 
     private constructor() {
         MIDI.loadPlugin({
-            soundfontUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/',
+            soundfontUrl: '/midi/',
             instrument: 'acoustic_grand_piano',
             onsuccess: () => {
                 this._ready = true
+                // this.noteOn(0, 65, 255)
             }
         })
     }
@@ -37,7 +38,6 @@ class _MIDIPlayer {
 }
 
 function toNote(note: NoteLike) {
-    const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
     if (typeof note === 'string') {
         if (note.includes('#')) {
             note = note.replace('#', '')
@@ -49,6 +49,4 @@ function toNote(note: NoteLike) {
     return note
 }
 
-_window.toNote = toNote
-
-export default _MIDIPlayer.instance
+export default MIDIPlayer.instance

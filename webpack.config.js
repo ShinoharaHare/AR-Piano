@@ -7,12 +7,13 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 module.exports = {
     entry: path.resolve(__dirname, 'src/main.ts'),
     devServer: {
-        port: 3000,
+        port: 8080,
         https: false,
         compress: true,
         host: '0.0.0.0',
-        https: true
-        // disableHostCheck: true,
+        https: true,
+        hot: false,
+        inline: false
     },
     output: {
         filename: 'bundle.js',
