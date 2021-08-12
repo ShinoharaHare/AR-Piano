@@ -10,6 +10,8 @@ class Keyboard extends BaseObject {
     public constructor() {
         super()
 
+        this.name = 'Keyboard'
+
         this.keys = []
         this.loadModel()
     }
