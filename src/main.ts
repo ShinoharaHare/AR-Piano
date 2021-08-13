@@ -4,14 +4,18 @@ import { _window } from './utils'
 import { Hands } from '@mediapipe/hands'
 import { Core, Hand, HandBehavior, Keyboard, KeyboardBehavior } from './engine'
 import { Depth } from './engine/hand/Depth'
-import { filter } from 'rxjs/operators'
+import { filter, map } from 'rxjs/operators'
+import { fromEvent } from 'rxjs'
 
-
+function display(obj: any) {
+    _window.display(obj);
+}
 
 async function main() {
     var geometry = new THREE.CircleGeometry(0.02, 32);
     const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
     const circle = new THREE.Mesh( geometry, material );
+/*
     // circle.position.y = 1;
     circle.position.z = -2;
 
@@ -35,17 +39,17 @@ async function main() {
         // _window.min = Math.min(_window.min, d);
     });
 
-
+*/
     // =======================================================
     const core = new Core()
     core.init({
         container: document.getElementById('container')!
     })
-    const hands = initAndAttachMpHands(core)
+    // const hands = initAndAttachMpHands(core)
 
     core.add(new THREE.AmbientLight(0x666666))
     core.add(new THREE.DirectionalLight(0xffffff, 0.6))
-
+/*
     let hand = new Hand()
     let handBehavior = new HandBehavior()
     handBehavior.setCamera(core.arCamera)
@@ -93,13 +97,37 @@ async function main() {
     // =======================
     core.add(circle);
     // =======================
+*/
+    const arobj = new THREE.Mesh(
+        new THREE.CircleGeometry(1, 32), 
+        new THREE.MeshBasicMaterial( { color: 0xff0000 } )
+    );
 
-    // core.addMarker('pattern-marker.patt', new THREE.Mesh(geometry, material))
+    const axesHelper = new THREE.AxesHelper( 1 );
+    core.add( axesHelper );
+    // axesHelper.position.y = 1;  
+    axesHelper.position.z = -2;
+    _window.axesHelper = axesHelper
+
+    core.addMarker('pattern-marker.patt', arobj)
+    _window.arobj = arobj;
+    
+    core.marker$?.pipe(
+        map((o: THREE.Object3D) => 
+        o.rotation
+        ),
+        // filter(e => e!=undefined)
+    ).subscribe(eular => {
+        console.log('displayed!');
+        display(eular)
+        _window.axesHelper.setRotationFromEuler(eular);
+    });
+    // axesHelper.setRotationFromEuler(arobj.rotation);
 
     core.flipX()
     core.run()
     _window.core = core
-    _window.hand = hands
+    // _window.hand = hands
 }
 
 function initAndAttachMpHands(core: Core) {
@@ -126,3 +154,12 @@ function initAndAttachMpHands(core: Core) {
 }
 
 main()
+
+
+// const ti = setInterval(() => {
+//     _window.axesHelper.setRotationFromEuler(_window.arobj.rotation);
+// }, 1000);
+
+// _window.ST = () => {
+//     clearInterval(ti);
+// };

@@ -12,11 +12,36 @@
             width: 100vw;
             height: 100vh;
         }
+        .dis {
+            position: fixed;
+            /* top: 50%;
+            left:50%;
+            transform: translate(50%, 50%); */
+            top: 0px;
+            right: 0px;
+
+            width: 200px;
+            height: 150px;
+            background: rgba(237, 127, 127, 50%);
+
+            padding: 10px;
+            margin: 15px;
+        }
     </style>
 </head>
 
 <body>
     <div id="container"></div>
+    <pre class="dis">
+        TEXT
+    </pre>
 </body>
+<script>
+    const dis = document.querySelector('.dis');
+
+    function display(obj) {
+        dis.innerText = JSON.stringify(obj, null, 4);
+    }
+</script>
 
 </html>

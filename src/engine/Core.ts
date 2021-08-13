@@ -1,9 +1,22 @@
 import * as THREE from 'three'
 import * as THREEx from 'ar-threex'
 import BaseObject from './BaseObject'
+import { BehaviorSubject } from 'rxjs';
 
 export interface InitParams {
     container: HTMLElement
+}
+
+class ObservableAMC extends THREEx.ArMarkerControls {
+    // object3d: THREE.Object3D
+    /** 獲得3D物件的BehaviorSubject */
+    public marker$: BehaviorSubject<THREE.Object3D> = new BehaviorSubject(new THREE.Object3D());
+    constructor(...a: any[]) { super(...a) }
+
+    updateWithModelViewMatrix(mvm: any) {
+        super.updateWithModelViewMatrix(mvm);
+        this.marker$.next(this.object3d);
+    }
 }
 
 class Core extends THREE.EventDispatcher {
@@ -18,6 +31,8 @@ class Core extends THREE.EventDispatcher {
     private _aspect!: number
     private _objects: BaseObject[] = []
     private _running: boolean = false
+
+    public marker$?: BehaviorSubject<THREE.Object3D>;
 
     get video(): HTMLVideoElement { return this._arSource.domElement }
     get width() { return this._renderer.domElement.width }
@@ -97,10 +112,12 @@ class Core extends THREE.EventDispatcher {
     }
 
     addMarker(markerPath: string, object: THREE.Object3D) {
-        new THREEx.ArMarkerControls(this._arContext, object, {
+        // new THREEx.ArMarkerControls(this._arContext, object, {
+        const oamc = new ObservableAMC(this._arContext, object, {
             type: 'pattern',
             patternUrl: markerPath
         })
+        this.marker$ = oamc.marker$;
         this._mainScene.add(object)
     }
 
