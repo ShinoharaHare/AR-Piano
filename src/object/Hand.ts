@@ -1,5 +1,4 @@
-import { GameObject, MonoBehaviour } from '../core';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { ModelGameObject, MonoBehaviour } from '../core';
 import { Handedness } from '../types';
 import { AngleData } from '../tracking/AngleData';
 
@@ -7,12 +6,12 @@ import { AngleData } from '../tracking/AngleData';
 const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
 
 class HandBehavior extends MonoBehaviour {
-    angleData: AngleData = new AngleData();
+    readonly angleData: AngleData = new AngleData();
 
     get hand(): Hand { return this.gameObject as Hand; }
 
-    constructor(gameObject: GameObject) {
-        super(gameObject);
+    constructor(hand: Hand) {
+        super(hand);
     }
 
     update() {
@@ -24,14 +23,11 @@ class HandBehavior extends MonoBehaviour {
     }
 }
 
-export class Hand extends GameObject {
-    behavior: HandBehavior = new HandBehavior(this);
-    bones: THREE.Bone[] = [];
+export class Hand extends ModelGameObject {
+    readonly behavior: HandBehavior = new HandBehavior(this);
+    readonly bones: THREE.Bone[] = [];
 
     private handednessInternal: Handedness = Handedness.Left;
-    private loadedInternal: boolean = false;
-
-    get loaded() { return this.loadedInternal; }
 
     get handedness(): Handedness { return this.handednessInternal; }
     set handedness(handedness: Handedness) {
@@ -40,24 +36,15 @@ export class Hand extends GameObject {
     }
 
     constructor(handedeness: Handedness = Handedness.Left) {
-        super();
+        super('models/hand.glb');
 
         this.name = this.constructor.name;
         this.handedness = handedeness;
-
-        this.load();
     }
-
-    private async load() {
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync('models/hand.glb');
-        this.add(gltf.scene);
-
+    
+    protected onLoaded() {
         this.loadBones();
-
-        this.loadedInternal = true;
-
-        this.onLoaded();
+        this.onChangeHandedness();
     }
 
     private loadBones() {
@@ -67,10 +54,6 @@ export class Hand extends GameObject {
                 this.bones.push(bone);
             }
         }
-    }
-
-    private onLoaded() {
-        this.onChangeHandedness();
     }
 
     private onChangeHandedness() {

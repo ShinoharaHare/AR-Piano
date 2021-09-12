@@ -1,11 +1,10 @@
-import { GameObject, MonoBehaviour } from '../core';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { ModelGameObject, MonoBehaviour } from '../core';
 
 class KeyboardBehavior extends MonoBehaviour {
     get keyboard(): Keyboard { return this.gameObject as Keyboard; }
 
-    constructor(gameObject: GameObject) {
-        super(gameObject);
+    constructor(keyboard: Keyboard) {
+        super(keyboard);
     }
 
     update() {
@@ -13,16 +12,14 @@ class KeyboardBehavior extends MonoBehaviour {
     }
 }
 
-export class Keyboard extends GameObject {
-    private behavior: KeyboardBehavior = new KeyboardBehavior(this);
+export class Keyboard extends ModelGameObject {
+    readonly behavior: KeyboardBehavior = new KeyboardBehavior(this);
 
     constructor() {
-        super();
+        super('models/keyboard.glb');
     }
 
-    private async load() {
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync('');
-        this.add(gltf.scene);
+    protected onLoaded() {
+        
     }
 }
