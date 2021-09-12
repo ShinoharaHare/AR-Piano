@@ -68,6 +68,13 @@ async function main() {
         }
     });
 
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const cube = new THREE.Mesh(geometry, material);
+
+    core.addMarker('pattern/aruco-9-0.9.patt', cube);
+    core.add(cube);
+
     // tracker.stop();
 
     core.start();
