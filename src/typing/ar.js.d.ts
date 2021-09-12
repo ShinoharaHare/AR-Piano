@@ -1,1 +1,1 @@
-declare module 'ar-threex'
+declare module 'ar-threex';
