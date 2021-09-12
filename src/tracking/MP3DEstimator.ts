@@ -49,7 +49,7 @@ export class MP3DEstimator extends HandEstimator {
             target.set(i, 0, this.calculateFingerProximalAngle(i));
         }
 
-        for (let i = 1; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             for (let j = 1; j < 3; j++) {
                 target.set(i, j, this.calculateFingerAngle(i, j));
             }

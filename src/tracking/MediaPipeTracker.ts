@@ -4,7 +4,7 @@ import { Hands, Options, HandsConfig, Results } from '@mediapipe/hands'
 
 export class MediaPipeTracker extends HandTracker {
     private hands: Hands;
-    private _queue: Function[] = [];
+    private queue: Function[] = [];
 
     constructor(options: Options, config?: HandsConfig) {
         super();
@@ -23,7 +23,7 @@ export class MediaPipeTracker extends HandTracker {
         //         result.push(x)
         //     }
         // }
-        const resolve = this._queue.shift();
+        const resolve = this.queue.shift();
         resolve?.(results);
     }
 
@@ -33,7 +33,7 @@ export class MediaPipeTracker extends HandTracker {
 
     public async infer(image: HTMLVideoElement): Promise<TrackerResult> {
         this.hands.send({ image });
-        let result = await new Promise<TrackerResult>(resolve => this._queue.push(resolve));
+        let result = await new Promise<TrackerResult>(resolve => this.queue.push(resolve));
         return result;
     }
 

@@ -1,19 +1,13 @@
 import { AngleData } from './AngleData';
 
 export class AngleSmoother {
-    smoothAngle: AngleData = new AngleData();
+    readonly smoothAngle: AngleData = new AngleData();
     private angleDataPool: AngleData[] = [];
-
-    private smoothCount: number = 5;
-    private smoothTolerance: number = 5 * Math.PI / 180;
 
     private average: AngleData = new AngleData();
     private index: number = 0;
 
-    constructor(smoothCount: number, smoothTolerance: number) {
-        this.smoothCount = smoothCount;
-        this.smoothTolerance = smoothTolerance;
-
+    constructor(private smoothCount: number = 5, private smoothTolerance: number = 2 * Math.PI / 180) {
         this.angleDataPool = Array.from({ length: this.smoothCount }, () => new AngleData());
     }
 
