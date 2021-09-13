@@ -42,7 +42,7 @@ export class Hand extends ModelGameObject {
         this.handedness = handedeness;
     }
     
-    protected onLoaded() {
+    protected onModelLoaded() {
         this.loadBones();
         this.onChangeHandedness();
     }

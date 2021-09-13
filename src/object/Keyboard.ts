@@ -19,7 +19,7 @@ export class Keyboard extends ModelGameObject {
         super('models/keyboard.glb');
     }
 
-    protected onLoaded() {
+    protected onModelLoaded() {
         
     }
 }

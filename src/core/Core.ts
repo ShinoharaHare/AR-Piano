@@ -31,6 +31,8 @@ export class Core extends THREE.EventDispatcher {
     get arSourceVideo(): HTMLVideoElement { return this.arToolkitSource.domElement }
     get aspectRaito(): number { return this.arSourceVideo.videoWidth / this.arSourceVideo.videoHeight }
 
+    private fixedUpdateInterval?: number;
+
     constructor(config: Config) {
         super();
 
@@ -119,13 +121,23 @@ export class Core extends THREE.EventDispatcher {
 
         this.scene.traverse(child => {
             if (child instanceof GameObject) {
-                child.dispatchEvent({ type: 'message', message: 'start' });
+                child.dispatchEvent({ type: 'message:core', message: 'start' });
             }
         })
+
+        clearInterval(this.fixedUpdateInterval);
+        this.fixedUpdateInterval = window.setInterval(() => {
+            this.scene.traverse(child => {
+                if (child instanceof GameObject) {
+                    child.dispatchEvent({ type: 'message:core', message: 'fixedUpdate' });
+                }
+            })
+        }, 20);
     }
 
     stop(): void {
         this.renderer.setAnimationLoop(null);
+        clearInterval(this.fixedUpdateInterval);
         this.dispatchEvent({ type: 'stop' });
     }
 
@@ -134,7 +146,7 @@ export class Core extends THREE.EventDispatcher {
         this.arToolkitContext.update(this.arToolkitSource.domElement);
         this.scene.traverse(child => {
             if (child instanceof GameObject) {
-                child.dispatchEvent({ type: 'message', message: 'update' });
+                child.dispatchEvent({ type: 'message:core', message: 'update' });
             }
         })
 
