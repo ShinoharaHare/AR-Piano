@@ -15,10 +15,8 @@ class HandBehavior extends MonoBehaviour {
     }
 
     update() {
-        if (this.hand.loaded) {
-            for (let i = 0; i < 15; i++) {
-                this.hand.bones[i].rotation.x = -this.angleData.getByIndex(i);
-            }
+        for (let i = 0; i < 15; i++) {
+            this.hand.bones[i].rotation.x = -this.angleData.getByIndex(i);
         }
     }
 }
@@ -35,19 +33,28 @@ export class Hand extends ModelGameObject {
         this.onChangeHandedness();
     }
 
+    private opacityInternal: number = 1.0;
+
+    get opacity(): number { return this.opacityInternal; }
+    set opacity(opacity: number) {
+        this.opacityInternal = opacity;
+        this.onChangeOpacity();
+    }
+
     constructor(handedeness: Handedness = Handedness.Left) {
         super('models/hand.glb');
 
         this.name = this.constructor.name;
         this.handedness = handedeness;
     }
-    
+
     protected onModelLoaded() {
-        this.loadBones();
+        this.getBones();
         this.onChangeHandedness();
+        this.onChangeOpacity();
     }
 
-    private loadBones() {
+    private getBones() {
         for (let finger of fingerNames) {
             for (let i = 1; i <= 3; i++) {
                 let bone = this.getObjectByName(`${finger}${i}`) as THREE.Bone;
@@ -57,9 +64,17 @@ export class Hand extends ModelGameObject {
     }
 
     private onChangeHandedness() {
-        if (this.loaded) {
+        if (this.isModelLoaded) {
             let root = this.getObjectByName('Armature')!;
             root.scale.y = Math.abs(root.scale.y) * (this.handedness === Handedness.Left ? 1 : -1);
+        }
+    }
+
+    private onChangeOpacity() {
+        if (this.isModelLoaded) {
+            let mesh = this.children[0].getObjectByName('Hand') as THREE.SkinnedMesh;
+            let material = mesh.material as THREE.MeshStandardMaterial;
+            material.opacity = this.opacity;
         }
     }
 }

@@ -33,11 +33,17 @@ export class MP3DEstimator extends HandEstimator {
     }
 
     private calculateFingerAngle(finger: Finger, knuckle: Knucle): number {
-        let idx = finger * 4 + knuckle;
-        this.v1.subVectors(this.vectors[idx + 1], this.vectors[idx]);
-        this.v2.subVectors(this.vectors[idx + 2], this.vectors[idx + 1]);
-        let angle = this.v1.angleTo(this.v2);
-        return angle;
+        if (finger === Finger.Thumb && knuckle === Knucle.Proximal) {
+            return this.calculateThumbProximalAngle();
+        } else if (knuckle === Knucle.Proximal) {
+            return this.calculateFingerProximalAngle(finger);
+        } else {
+            let idx = finger * 4 + knuckle;
+            this.v1.subVectors(this.vectors[idx + 1], this.vectors[idx]);
+            this.v2.subVectors(this.vectors[idx + 2], this.vectors[idx + 1]);
+            let angle = this.v1.angleTo(this.v2);
+            return angle;
+        }
     }
 
     estimateAngles(landmarks: NormalizedLandmark[], target?: AngleData): AngleData {
@@ -45,12 +51,8 @@ export class MP3DEstimator extends HandEstimator {
 
         this.updateVectors(landmarks);
 
-        for (let i = 1; i < 5; i++) {
-            target.set(i, 0, this.calculateFingerProximalAngle(i));
-        }
-
         for (let i = 0; i < 5; i++) {
-            for (let j = 1; j < 3; j++) {
+            for (let j = 0; j < 3; j++) {
                 target.set(i, j, this.calculateFingerAngle(i, j));
             }
         }

@@ -50,11 +50,11 @@ export class Core extends THREE.EventDispatcher {
         window.addEventListener('resize', () => this.onResize())
     }
 
-    add(object: THREE.Object3D) {
+    add(object: THREE.Object3D): void {
         this.scene.add(object);
     }
 
-    addMarker(params: string | Partial<MarkerParams>, object: THREE.Object3D) {
+    addMarker(params: string | Partial<MarkerParams>, object: THREE.Object3D): void {
         params = typeof params === 'string' ? { patternUrl: params } : params;
         params = createMarkerParams(params);
         let controls = new THREEx.ArMarkerControls(this.arToolkitContext, object, params);
@@ -104,7 +104,7 @@ export class Core extends THREE.EventDispatcher {
         this.renderer.setSize(width, height);
     }
 
-    private onResize() {
+    private onResize(): void {
         if (this.ready) {
             if (this.fullscreen) {
                 this.resizeFullscreen();

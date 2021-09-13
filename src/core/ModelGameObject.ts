@@ -2,8 +2,8 @@ import { GameObject } from './GameObject';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export class ModelGameObject extends GameObject {
-    private loadedInternal: boolean = false;
-    get loaded(): boolean { return this.loadedInternal; }
+    private loaded: boolean = false;
+    get isModelLoaded(): boolean { return this.loaded; }
 
     constructor(readonly modelPath: string) {
         super();
@@ -22,7 +22,7 @@ export class ModelGameObject extends GameObject {
     }
 
     private onLoaded(): void {
-        this.loadedInternal = true;
+        this.loaded = true;
         this.ready = true;
     }
 
