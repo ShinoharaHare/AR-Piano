@@ -12,9 +12,9 @@ interface Config {
 }
 
 export class Core extends THREE.EventDispatcher {
-    private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    private scene: THREE.Scene = new THREE.Scene();
-    private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
+    readonly renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    readonly scene: THREE.Scene = new THREE.Scene();
+    readonly camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private fullscreenInternel: boolean = true;
     get fullscreen(): boolean { return this.fullscreenInternel }
     set fullscreen(value: boolean) {
@@ -30,6 +30,7 @@ export class Core extends THREE.EventDispatcher {
 
     get arSourceVideo(): HTMLVideoElement { return this.arToolkitSource.domElement }
     get aspectRaito(): number { return this.arSourceVideo.videoWidth / this.arSourceVideo.videoHeight }
+    get canvas(): HTMLCanvasElement { return this.renderer.domElement }
 
     private fixedUpdateInterval?: number;
 
@@ -113,6 +114,11 @@ export class Core extends THREE.EventDispatcher {
             }
         }
     }
+
+    // flip(): void {
+    //     this.container.style.transform = 'scaleX(-1)';
+    //     this.scene.children[5].scale.x = -1;
+    // }
 
     start(): void {
         this.dispatchEvent({ type: 'start' });

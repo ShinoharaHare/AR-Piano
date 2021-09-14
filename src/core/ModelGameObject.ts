@@ -7,7 +7,7 @@ export class ModelGameObject extends GameObject {
 
     constructor(readonly modelPath: string) {
         super();
-
+        this.name = this.constructor.name;
         this.ready = false;
         this.load();
     }

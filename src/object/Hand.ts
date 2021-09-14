@@ -14,7 +14,7 @@ class HandBehavior extends MonoBehaviour {
         super(hand);
     }
 
-    update() {
+    override update() {
         for (let i = 0; i < 15; i++) {
             this.hand.bones[i].rotation.x = -this.angleData.getByIndex(i);
         }
@@ -48,7 +48,7 @@ export class Hand extends ModelGameObject {
         this.handedness = handedeness;
     }
 
-    protected onModelLoaded() {
+    protected override onModelLoaded() {
         this.getBones();
         this.onChangeHandedness();
         this.onChangeOpacity();

@@ -17,7 +17,7 @@ export class GameObject extends THREE.Object3D {
     constructor() {
         super();
 
-        this.name = 'GameObject';
+        this.name = this.constructor.name;
         this.addEventListener('message:core', event => this.onCoreMessage(event));
     }
 

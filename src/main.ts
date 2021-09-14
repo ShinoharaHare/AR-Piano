@@ -19,15 +19,18 @@ async function main() {
         }
     );
 
+    const container = document.getElementById('container')!;
+
     const core = new Core({
-        container: document.getElementById('container')!,
+        container,
         arSourceParams: {
             sourceWidth: 640,
             sourceHeight: 480
         },
         arContextParams: {
             patternRatio: 0.9
-        }
+        },
+        fullscreen: false,
     });
 
     core.add(new THREE.AmbientLight(0x666666));
@@ -42,25 +45,23 @@ async function main() {
 
     window.left = left;
 
-    // let keyboard = new Keyboard();
-    // keyboard.position.z = -3.0;
-    // keyboard.position.y = -0.5;
-    // keyboard.rotation.y = Math.PI / 2;
-    // core.add(keyboard);
+    let keyboard = new Keyboard();
+    keyboard.position.y = -0.5;
+    keyboard.position.z = -3.0;
 
+    keyboard.rotation.x = 30 * Math.PI / 180;
+    keyboard.rotation.y = Math.PI / 2;
+    keyboard.mouseBehavior.attach(core.camera, core.canvas);
+    // keyboard.mouseBehavior.enabled = false;
+    core.add(keyboard);
+
+    window.core = core;
 
     const estimator = new MP3DEstimator();
     const smoother = new AngleSmoother();
     const angleData = new AngleData();
 
     tracker.track(core.arSourceVideo, results => {
-        // let landmarks = results.multiHandLandmarks[0]
-        // if (landmarks) {
-        //     estimator.estimateAngles(landmarks, angleData);
-        //     smoother.update(angleData);
-        //     left.behavior.angleData.copy(smoother.smoothAngle);
-        // }
-
         for (let i = 0; i < results.multiHandedness.length; i++) {
             let { label } = results.multiHandedness[i];
             let landmarks = results.multiHandLandmarks[i];
@@ -76,7 +77,7 @@ async function main() {
         }
     });
 
-    // tracker.stop();
+    tracker.stop();
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
