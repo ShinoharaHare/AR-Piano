@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { Core } from './core';
 import { Hand } from './object/Hand';
 import { Keyboard } from './object/Keyboard';
+import { KH } from './object/KH';
 import { AngleSmoother, MP3DEstimator, MediaPipeTracker } from './tracking';
 import { AngleData } from './tracking/AngleData';
 import { Handedness } from './types';
@@ -30,61 +32,66 @@ async function main() {
         arContextParams: {
             patternRatio: 0.9
         },
-        fullscreen: false,
+        fullscreen: true,
     });
+    window.core = core;
 
     core.add(new THREE.AmbientLight(0x666666));
     core.add(new THREE.DirectionalLight(0xffffff, 0.5));
 
-    let left = new Hand(Handedness.Left);
-    left.rotation.x = Math.PI / 2;
-    left.rotation.z = Math.PI;
-    left.position.z = -3.0;
-    left.position.y = -0.5;
-    core.add(left);
-
-    window.left = left;
-
-    let keyboard = new Keyboard();
-    keyboard.position.y = -0.5;
-    keyboard.position.z = -3.0;
-
-    keyboard.rotation.x = 30 * Math.PI / 180;
-    keyboard.rotation.y = Math.PI / 2;
-    keyboard.mouseBehavior.attach(core.camera, core.canvas);
-    // keyboard.mouseBehavior.enabled = false;
-    core.add(keyboard);
-
-    window.core = core;
+    let kh = new KH();
+    let anchor = new THREE.Object3D();
+    core.addMarker({
+        patternUrl: 'pattern/aruco-8-0.9.patt',
+        smoothCount: 5,
+        smoothTolerance: 0.08
+    }, anchor);
+    core.add(kh);
 
     const estimator = new MP3DEstimator();
-    const smoother = new AngleSmoother();
+    const smoother1 = new AngleSmoother(5, 0);
+    smoother1.bind(kh.leftHand.behavior.angleData);
+    const smoother2 = new AngleSmoother(5, 0);
+    smoother2.bind(kh.rightHand.behavior.angleData);
+
     const angleData = new AngleData();
 
     tracker.track(core.arSourceVideo, results => {
         for (let i = 0; i < results.multiHandedness.length; i++) {
-            let { label } = results.multiHandedness[i];
+            let { label, score } = results.multiHandedness[i];
             let landmarks = results.multiHandLandmarks[i];
+            estimator.update(landmarks);
+            estimator.getAngles(angleData);
 
+            let { x, y } = landmarks[0];
             if (label === 'Right') {
-                estimator.estimateAngles(landmarks, angleData);
-                // left.behavior.angleData.copy(angleData);
-                smoother.update(angleData);
-                left.behavior.angleData.copy(smoother.smoothAngle);
-            } else {
-
+                kh.behavior.updateLeftHand(x * 2.5 - 1.25, y * 2 - 1);
+                smoother1.update(angleData);
+            } else if (label === 'Left') {
+                kh.behavior.updateRightHand(x * 2.5 - 1.25, y * 2 - 1);
+                smoother2.update(angleData);
             }
         }
     });
 
-    tracker.stop();
+    // tracker.stop();
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
-    const cube = new THREE.Mesh(geometry, material);
+    let v1 = new THREE.Vector3();
+    let v2 = new THREE.Vector3();
+    let direction = new THREE.Vector3();
+    window.s = 16
+    core.addEventListener('update', () => {
+        // kh.rotation.copy(anchor.rotation);
+        // anchor.getWorldPosition(v1);
+        // core.camera.getWorldPosition(v2);
+        // direction.subVectors(v2, v1).normalize();
 
-    core.addMarker('pattern/aruco-9-0.9.patt', cube);
-    core.add(cube);
+        // kh.position.copy(v1.add(direction.multiplyScalar(window.s)));
+
+        core.renderer.clearDepth();
+        core.renderer.setViewport(core.canvas.width - 300, core.canvas.height - 300, 300, 300);
+        core.renderer.render(core.scene, kh.leftHandCamera);
+    });
 
     core.start();
 }

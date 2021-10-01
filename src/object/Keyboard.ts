@@ -8,7 +8,7 @@ type Mesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
 
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-class BaseKeyboardBehavior extends MonoBehaviour {
+export class KeyboardBehaviorBase extends MonoBehaviour {
     get keyboard(): Keyboard { return this.gameObject as Keyboard; }
 
     protected currentPressedMap: Map<number, boolean> = new Map();
@@ -27,9 +27,9 @@ class BaseKeyboardBehavior extends MonoBehaviour {
     override update() {
         for (let i = 0; i <= 24; i++) {
             if (this.currentPressedMap.get(i) && !this.lastPressedMap.get(i)) {
-                this.press(i);
+                this.onPress(i);
             } else if (!this.currentPressedMap.get(i) && this.lastPressedMap.get(i)) {
-                this.release(i);
+                this.onRelease(i);
             }
         }
 
@@ -37,13 +37,21 @@ class BaseKeyboardBehavior extends MonoBehaviour {
         this.currentPressedMap.clear();
     }
 
-    press(i: number) {
+    pressKey(idx: number) {
+        this.currentPressedMap.set(idx, true);
+    }
+
+    releaseKey(idx: number) {
+        this.currentPressedMap.set(idx, false);
+    }
+
+    private onPress(i: number) {
         midiPlayer.noteOn(0, this.indexToNote(i), 127);
         this.keyboard.meshes[i].material = this.keyboard.pressedMaterial;
         this.keyboard.keys[i].rotation.y = -5 * Math.PI / 180;
     }
 
-    release(i: number) {
+    private onRelease(i: number) {
         midiPlayer.noteOff(0, this.indexToNote(i));
         this.keyboard.meshes[i].material = this.keyboard.defaultMaterials[i];
         this.keyboard.keys[i].rotation.y = 0;
@@ -56,7 +64,7 @@ class BaseKeyboardBehavior extends MonoBehaviour {
     }
 }
 
-class KeyboardMouseBehaviour extends BaseKeyboardBehavior {
+class KeyboardMouseBehaviour extends KeyboardBehaviorBase {
     private camera?: THREE.Camera;
     private point: THREE.Vector2 = new Vector2();
     private raycaster: THREE.Raycaster = new THREE.Raycaster();
@@ -110,25 +118,14 @@ class KeyboardMouseBehaviour extends BaseKeyboardBehavior {
     }
 }
 
-class KeyboardHandBehaviour extends BaseKeyboardBehavior {
-    private hand?: Hand;
-
-    override update() {
-        if (this.hand) {
-            let bb1 = new Box3().setFromObject(this.keyboard.meshes[0]);
-            let bb2 = new Box3().setFromObject(this.hand.bones[5]);
-            let collided = bb1.intersectsBox(bb2);
-            console.log(collided);
-        }
-    }
-}
-
 export class Keyboard extends ModelGameObject {
-    readonly mouseBehavior: KeyboardMouseBehaviour = new KeyboardMouseBehaviour(this);
-    readonly handBehavior: KeyboardHandBehaviour = new KeyboardHandBehaviour(this);
+    // readonly mouseBehavior: KeyboardMouseBehaviour = new KeyboardMouseBehaviour(this);
+    // readonly handBehavior: KeyboardHandBehaviour = new KeyboardHandBehaviour(this);
+    readonly behavior: KeyboardBehaviorBase = new KeyboardBehaviorBase(this);
     readonly keys: Array<THREE.Object3D> = [];
     readonly meshes: Array<Mesh> = [];
     readonly pressedMaterial: THREE.MeshBasicMaterial = new THREE.MeshPhongMaterial({ color: 'yellow' })
+    readonly tipMaterial: THREE.MeshBasicMaterial = new THREE.MeshPhongMaterial({ color: 'purple' })
     readonly defaultMaterials: THREE.Material[] = []
 
     constructor() {

@@ -4,19 +4,13 @@ import { Finger, Knucle } from '../types';
 import { AngleData } from './AngleData';
 import { HandEstimator } from './HandEstimator';
 
-export class MP3DEstimator extends HandEstimator {
+export class MP3DEstimator {
     private vectors: Vector3[] = Array.from({ length: 21 }, () => new Vector3());
     private v1: Vector3 = new Vector3();
     private v2: Vector3 = new Vector3();
 
     constructor() {
-        super();
-    }
-
-    private updateVectors(landmarks: NormalizedLandmark[]) {
-        landmarks.forEach(({ x, y, z }, index) => {
-            this.vectors[index].set(x, y, z);
-        });
+        // super();
     }
 
     private calculateThumbProximalAngle(): number {
@@ -46,10 +40,14 @@ export class MP3DEstimator extends HandEstimator {
         }
     }
 
-    estimateAngles(landmarks: NormalizedLandmark[], target?: AngleData): AngleData {
-        target = target || new AngleData();
+    update(landmarks: NormalizedLandmark[]) {
+        landmarks.forEach(({ x, y, z }, index) => {
+            this.vectors[index].set(x, y, z);
+        });
+    }
 
-        this.updateVectors(landmarks);
+    getAngles(target?: AngleData): AngleData {
+        target = target || new AngleData();
 
         for (let i = 0; i < 5; i++) {
             for (let j = 0; j < 3; j++) {

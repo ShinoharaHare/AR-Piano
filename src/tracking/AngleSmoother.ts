@@ -1,14 +1,18 @@
 import { AngleData } from './AngleData';
 
 export class AngleSmoother {
-    readonly smoothAngle: AngleData = new AngleData();
     private angleDataPool: AngleData[] = [];
+    private output?: AngleData;
 
     private average: AngleData = new AngleData();
     private index: number = 0;
 
     constructor(private smoothCount: number = 5, private smoothTolerance: number = 2 * Math.PI / 180) {
         this.angleDataPool = Array.from({ length: this.smoothCount }, () => new AngleData());
+    }
+
+    bind(output: AngleData): void {
+        this.output = output;
     }
 
     update(angleData: AngleData): void {
@@ -23,7 +27,7 @@ export class AngleSmoother {
         for (let i = 0; i < 15; i++) {
             let difference = average.getByIndex(i) - angleData.getByIndex(i);
             if (Math.abs(difference) > this.smoothTolerance) {
-                this.smoothAngle.setByIndex(i, average.getByIndex(i));
+                this.output?.setByIndex(i, average.getByIndex(i));
             }
         }
 

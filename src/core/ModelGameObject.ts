@@ -17,8 +17,8 @@ export class ModelGameObject extends GameObject {
         const gltf = await loader.loadAsync(this.modelPath);
         this.add(gltf.scene);
 
-        this.onModelLoaded();
         this.onLoaded();
+        this.onModelLoaded();
     }
 
     private onLoaded(): void {

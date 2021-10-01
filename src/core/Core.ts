@@ -148,7 +148,6 @@ export class Core extends THREE.EventDispatcher {
     }
 
     private update(): void {
-        this.dispatchEvent({ type: 'update' });
         this.arToolkitContext.update(this.arToolkitSource.domElement);
         this.scene.traverse(child => {
             if (child instanceof GameObject) {
@@ -157,7 +156,10 @@ export class Core extends THREE.EventDispatcher {
         })
 
         this.renderer.clear();
+        this.renderer.setViewport(0, 0, this.canvas.width, this.canvas.height);
         this.renderer.render(this.scene, this.camera);
+
+        this.dispatchEvent({ type: 'update' });
     }
 
     private initializeContainer(element: HTMLElement): HTMLElement {

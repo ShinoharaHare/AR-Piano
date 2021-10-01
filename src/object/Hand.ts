@@ -15,7 +15,7 @@ class HandBehavior extends MonoBehaviour {
     }
 
     override update() {
-        for (let i = 0; i < 15; i++) {
+        for (let i = 1; i < 15; i++) {
             this.hand.bones[i].rotation.x = -this.angleData.getByIndex(i);
         }
     }
@@ -72,7 +72,7 @@ export class Hand extends ModelGameObject {
 
     private onChangeOpacity() {
         if (this.isModelLoaded) {
-            let mesh = this.children[0].getObjectByName('Hand') as THREE.SkinnedMesh;
+            let mesh = this.getObjectByName('Armature')!.getObjectByName('Hand') as THREE.SkinnedMesh;
             let material = mesh.material as THREE.MeshStandardMaterial;
             material.opacity = this.opacity;
         }
