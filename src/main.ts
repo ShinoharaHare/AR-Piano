@@ -53,13 +53,14 @@ async function main() {
     keyboard.rotation.y = Math.PI / 2;
     keyboard.mouseBehavior.attach(core.camera, core.canvas);
     // keyboard.mouseBehavior.enabled = false;
-    core.add(keyboard);
+    // core.add(keyboard);
 
     window.core = core;
 
     const estimator = new MP3DEstimator();
     const smoother = new AngleSmoother();
     const angleData = new AngleData();
+    const angles2 = new Float32Array(5);
 
     tracker.track(core.arSourceVideo, results => {
         for (let i = 0; i < results.multiHandedness.length; i++) {
@@ -68,16 +69,18 @@ async function main() {
 
             if (label === 'Right') {
                 estimator.estimateAngles(landmarks, angleData);
+                estimator.estimateAngles2(landmarks, angles2);
                 // left.behavior.angleData.copy(angleData);
                 smoother.update(angleData);
                 left.behavior.angleData.copy(smoother.smoothAngle);
+                left.behavior.angles2 = angles2;
             } else {
 
             }
         }
     });
 
-    tracker.stop();
+    // tracker.stop();
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshPhongMaterial({ color: 0xffffff });

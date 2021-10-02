@@ -7,6 +7,7 @@ const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
 
 class HandBehavior extends MonoBehaviour {
     readonly angleData: AngleData = new AngleData();
+    public   angles2: Float32Array = new Float32Array(5);  // 手指張開的角度
 
     get hand(): Hand { return this.gameObject as Hand; }
 
@@ -17,6 +18,10 @@ class HandBehavior extends MonoBehaviour {
     override update() {
         for (let i = 0; i < 15; i++) {
             this.hand.bones[i].rotation.x = -this.angleData.getByIndex(i);
+        }
+        // 手指張開的角度 (暫時排除拇指)
+        for(let i = 1; i < 5; i++) {
+            this.hand.bones[i * 3].rotation.z = this.angles2[i];
         }
     }
 }

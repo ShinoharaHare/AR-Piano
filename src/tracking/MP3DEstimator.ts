@@ -59,4 +59,27 @@ export class MP3DEstimator extends HandEstimator {
 
         return target;
     }
+
+    estimateAngles2(landmarks: NormalizedLandmark[], target?: Float32Array): Float32Array {
+        target = target || new Float32Array(5);
+
+        this.v1.subVectors(this.vectors[1], this.vectors[0]);
+        this.v2.subVectors(this.vectors[2], this.vectors[1]);
+        target[0] = (this.v1.angleTo(this.v2)) - 1.3;
+        // angle5[0] = (this.v1.angleTo(this.v2)) * 2;
+
+        this.v1.subVectors(this.vectors[10], this.vectors[9]);
+        this.v2.subVectors(this.vectors[6], this.vectors[5]);
+        target[1] = -(this.v1.angleTo(this.v2));
+        
+        target[2] = 0;
+
+        this.v2.subVectors(this.vectors[14], this.vectors[13]);
+        target[3] = (this.v1.angleTo(this.v2));
+
+        this.v2.subVectors(this.vectors[18], this.vectors[17]);
+        target[4] = (this.v1.angleTo(this.v2));
+
+        return target;
+    }
 }
