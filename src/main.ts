@@ -5,6 +5,7 @@ import { Keyboard } from './object/Keyboard';
 import { AngleSmoother, MP3DEstimator, MediaPipeTracker } from './tracking';
 import { AngleData } from './tracking/AngleData';
 import { Handedness } from './types';
+import { FPS, display } from './utils';
 
 
 async function main() {
@@ -61,8 +62,10 @@ async function main() {
     const smoother = new AngleSmoother();
     const angleData = new AngleData();
     const angles2 = new Float32Array(5);
-
+    const fps = new FPS();
+    
     tracker.track(core.arSourceVideo, results => {
+        display([fps.fps, fps.min, fps.max].map(v => Math.floor(v)));
         for (let i = 0; i < results.multiHandedness.length; i++) {
             let { label } = results.multiHandedness[i];
             let landmarks = results.multiHandLandmarks[i];
